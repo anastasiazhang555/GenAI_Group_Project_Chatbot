@@ -1,0 +1,25 @@
+cat > .gitignore << 'EOF'
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual env
+.venv/
+
+# env secrets
+.env
+.env.*
+
+# OS files
+.DS_Store
+
+# Optional: large intermediate artifacts
+*.log
+EOF
+
+# model weights
+models/*.pt
+models/*.pkl
+
+# datasets
+data/*.csv
