@@ -9,7 +9,8 @@ It is designed for the **APAN5560 – GenAI Group Project** and integrates:
 
 - A **custom PyTorch LSTM emotion classifier** trained on the EmpatheticDialogues dataset  
 - An **OpenAI GPT-based therapist persona**, supporting multi-turn conversation  
-- A **Gradio web user interface** for interactive demo and live testing  
+- A **Gradio web user interface** for interactive demo and live testing
+- Supporting **FastAPI backend deployment**
 
 The result is a conversational agent that can:
 
@@ -54,21 +55,28 @@ python -m app.web_ui
 ## 📂 Project Structure
 ```
 APAN5560GEN-AI-Project/
-│
 ├── app/
-│   ├── chatbot.py               # OpenAI integration + multi-turn logic + emotion pipeline
-│   ├── emotion_model.py         # LSTM emotion classifier + inference pipeline
-│   ├── web_ui.py                # Gradio web interface
+│   ├── main.py                 # FastAPI entrypoint (health + chat)
+│   ├── chatbot.py              # Multi-turn OpenAI therapist persona
+│   ├── emotion_model.py        # LSTM classifier + preprocessing
+│   ├── web_ui.py               # Optional Gradio UI
+│   ├── config.py               # Environment variable loading
+│   └── schemas.py              # Request/response models
+│
+├── models/
+│   ├── emotion_lstm.pt         # Trained PyTorch model weights
+│   └── vocab.pkl               # Vocabulary for tokenizer
 │
 ├── training/
-│   ├── download_dataset.py      # Downloads EmpatheticDialogues dataset to CSV
-│   ├── train_emotion_model.py   # Trains LSTM classifier and saves weights + vocab
+│   ├── download_dataset.py     # Gets EmpatheticDialogues dataset
+│   └── train_emotion_model.py  # Reproduces the LSTM classifier
 │
-├── data/                        # (Optional) local dataset storage
-├── models/                      # Trained LSTM model weights (emotion_lstm.pt, vocab.pkl)
+├── data/                       # (Optional) downloaded dataset
 │
-├── requirements.txt
-├── README.md
+├── Dockerfile                  # FastAPI deployment container
+├── requirements.txt            # Python dependencies
+├── README.md                   # This documentation
+└── .env.example                # Example env file
 ```
 
 ## 🛠️ Installation
@@ -88,20 +96,54 @@ export OPENAI_API_KEY=“copy and paste APIkey”                        #Set yo
 ```
 
 ## 🎯 Usage
+### ▶️ Option 1 — Run the FastAPI backend
+Start the server:
+```
+uvicorn app.main:app --reload
+```
+Now open:
+```
+http://127.0.0.1:8000/health
+```
+Expected output:
+```
+{"status": "ok"}
+```
+Chat endpoint: http://127.0.0.1:8000/chat
+Example:
+```
+{
+  "message": "I'm feeling anxious about my future."
+}
+```
+Response Example:
+```
+{
+  "emotion": "sadness",
+  "confidence": 0.87,
+  "response": "It sounds like you’re carrying a lot of worry right now..."
+}
+```
+
+
+### ▶️ Option 2 — Launch the Gradio demo UI
 ```
 python -m app.chatbot #▶️ Run the terminal chatbot
 python -m app.web_ui  #🌐 Launch the Gradio web interface
 ```
+This opens a friendly chat interface in the browser:
 ```
-http://127.0.0.1:7860 #Open in the browser
+http://127.0.0.1:7860
 ```
 
 ## 🧪 Model Training Workflow
+Download dataset:
 ```
-python -m training.download_dataset      #1. Download dataset
+python -m training.download_dataset      
 ```
+Train LSTM emotion classifier:
 ```
-python -m training.train_emotion_model   #2. Train LSTM emotion classifier
+python -m training.train_emotion_model   
 ```
 
 ## 🧬 System Architecture
@@ -118,12 +160,9 @@ Chatbot Output (reflective, warm, supportive)
 ```
 ⸻
 
-## 👥 Team Members
-	•	Jiayin Zhang
-	•	Sitong Liu
-	•	Lanqi Zhang
-    •	Xiaoyu Zhu
-	•	Chloe
+## 👥 Team Members & Responsibility
+	•	Model Building, Backend & Frontend Setup: Jiayin Zhang, Sitong Liu
+	•	Report and Slides: Lanqi Zhang, Xiaoyu Zhu, Chloe
 
 ## 📜 License
 

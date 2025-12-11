@@ -99,20 +99,17 @@ def _ensure_system_message():
 
 
 # -----------------------------
-# 5. Main response generator
+# 5. Core logic that returns metadata 
 # -----------------------------
 
-def generate_response(user_message: str) -> str:
+def generate_response_with_metadata(user_message: str) -> Tuple[str, str, float]:
     """
-    Generate a therapist-style response for a single user message,
-    using full conversation history so far.
+    Generate a therapist-style response **and** return emotion metadata.
 
-    Steps:
-      1. Detect emotion with local LSTM model.
-      2. Append a user message (including emotion info) to CHAT_MESSAGES.
-      3. Call OpenAI with the entire CHAT_MESSAGES list.
-      4. Append assistant reply to history.
-      5. Return reply text (optionally with emotion metadata).
+    Returns:
+        reply_text: str   - the assistant's reply (no meta prefix)
+        emotion: str      - one of anger / sadness / joy / neutral
+        confidence: float - between 0 and 1
     """
     global CHAT_MESSAGES
 
@@ -124,17 +121,12 @@ def generate_response(user_message: str) -> str:
     emotion, confidence = postprocess_emotion(user_message, raw_emotion, confidence)
 
     # Step 2: add current user turn to history
-    # We embed emotion info into the content so the model can use it,
-    # but in natural language.
     user_content = (
         f"(The user's current emotional state is detected as {emotion} "
         f"with confidence {confidence:.2f}.) "
         f"The user says: {user_message}"
     )
     CHAT_MESSAGES.append({"role": "user", "content": user_content})
-
-    # (Optional) If you worry about very long chats, you could truncate here
-    # e.g., keep last N messages. For a class demo it's usually not needed.
 
     # Step 3: call OpenAI with full history
     try:
@@ -153,19 +145,32 @@ def generate_response(user_message: str) -> str:
             f"(internal error: {e})"
         )
         # We don't append an error as a normal assistant turn to the history.
-        return reply_text
+        return reply_text, emotion, confidence
 
     # Step 4: save assistant reply to history
     CHAT_MESSAGES.append({"role": "assistant", "content": reply_text})
 
-    # Step 5: (Optional) prepend meta info for debugging.
-    # If you want the web demo更自然，可以把 meta 去掉，只 return reply_text。
+    return reply_text, emotion, confidence
+
+
+# -----------------------------
+# 6. Wrapper for CLI / Gradio
+# -----------------------------
+
+def generate_response(user_message: str) -> str:
+    """
+    Old interface used by CLI and web UI.
+
+    It calls generate_response_with_metadata(...) internally
+    and returns a string with a meta prefix.
+    """
+    reply_text, emotion, confidence = generate_response_with_metadata(user_message)
     meta = f"[emotion: {emotion}, confidence: {confidence:.2f}]"
     return f"{meta}\n{reply_text}"
 
 
 # -----------------------------
-# 6. Simple CLI loop (for testing)
+# 7. Simple CLI loop (for testing)
 # -----------------------------
 
 def main():
